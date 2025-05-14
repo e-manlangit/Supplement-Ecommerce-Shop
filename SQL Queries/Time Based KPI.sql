@@ -101,3 +101,28 @@ FROM aov_years
 WHERE period IS NOT NULL
 GROUP BY period
 ORDER BY period;
+
+--Revenue percent change per quarter
+WITH quarterly_revenue AS(
+	SELECT
+		TO_CHAR(purchase_date, 'YYYY-Q') AS quarters,
+		SUM(quantity * price) AS revenue
+	FROM products
+	JOIN purchases USING (sku)
+	GROUP BY 1
+	ORDER BY 1
+),
+quarter_trends AS(
+	SELECT 
+		quarters,
+		revenue,
+		LAG(revenue) OVER (ORDER BY quarters) AS prev_revenue
+	FROM quarterly_revenue
+)
+
+SELECT 
+	quarters,
+	prev_revenue,
+	revenue,
+	ROUND(((revenue - prev_revenue) / prev_revenue * 100), 1) AS prct_change
+FROM quarter_trends;
